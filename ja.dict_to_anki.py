@@ -39,7 +39,9 @@ except:
 
 file = open(os.path.join(os.path.expanduser('~'),'Desktop\\')+'word_anki.txt', 'w', encoding='UTF-8')  #저장할 파일 열기 (바탕화면)
 
-for i in range(num - 1):    #페이지 수 만큼 실행
+page = 1
+
+while True:
     html = driver.page_source   #driver가 위치한 웹페이지의 소스 코드
     soup = BeautifulSoup(html,'html.parser')    #html parser 실행
     divs = soup.findAll('div', 'inner_card')    #단어 목록을 div단위로 추출 (한 페이지에 20개)
@@ -56,8 +58,8 @@ for i in range(num - 1):    #페이지 수 만큼 실행
         for meaning in meanings:
             if meaning.em is not None: #값이 none이 아니라면 실행
                 meaning.em.decompose() #em 태그 제거  
-            file.write(meaning.get_text().replace('\n',"").replace('	',"")+'<br>') #뜻에서 텍스트 추출, 엔터 제거, 공백(탭?)제거 + 줄바꿈
-            
+            file.write(meaning.get_text().replace('\n',"").replace('	',"")+'<br>') #뜻에서 텍스트 추출, 엔터 제거, 공백(탭?)제거 + 줄바꿈   
+        
         file.write('\t')
         
         exams = div.findAll('li','item_example')    #단어의 모든 예문 찾기
@@ -66,10 +68,13 @@ for i in range(num - 1):    #페이지 수 만큼 실행
             file.write(origin.get_text().replace('\n',"").replace('	',"")+'<br>') 
             translate = exam.find('p','translate')  #예문 해석 추출
             file.write(translate.get_text().replace('\n',"").replace('	',"")+'<br><br>')
-
+        
         file.write('\n')
         
+    if page == num: #마지막 페이지에 도달하면 break
+        break
     driver.find_element(By.CLASS_NAME, 'btn.btn_next._next_page_btn').click()   #다음 페이지 버튼 클릭
+    page+=1 #페이지 카운트
     time.sleep(1)
 
 file.close()
