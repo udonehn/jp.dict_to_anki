@@ -47,35 +47,51 @@ while True:
     divs = soup.findAll('div', 'inner_card')    #단어 목록을 div단위로 추출 (한 페이지에 20개)
 
     for div in divs:
+        imi = []    #단어 뜻(의미)
+        rei = []    #예문
+        long_text = ''
+        
         word = div.find('a').get_text().replace('\n','').replace('	','').replace('-','')   #단어를 찾아 텍스트 추출, 엔터 제거, 공백 제거, 하이픈 제거 (한자와 히라가나를 모두 추출)
         if '[' in word: #괄호가 있다면 실행(한자가 있다면 실행)
-            file.write(word.split('[')[0]+'\t') #히라가나 추출 #('['를 경계로 히라가나와 한자 분리)
-            file.write(word.split('[')[1].replace(']','')+'\t')  #한자 추출, '[' 제거
+            long_text += word.split('[')[0] + '\t'  #히라가나 추출 #('['를 경계로 히라가나와 한자 분리)
+            long_text += word.split('[')[1].replace(']','') #한자 추출, ']' 제거
         else:   #괄호가 없다면 실행
-            file.write(word+'\t'+word+'\t')
+            long_text += word+'\t'+word
+        long_text += '\t'
         
         meanings = div.findAll('div', 'mean_desc') #단어의 모든 뜻 찾기, div태그이면서 mean_desc 클래스
         for meaning in meanings:
             if meaning.em is not None: #값이 none이 아니라면 실행
                 meaning.em.decompose() #em 태그 제거  
-            file.write(meaning.get_text().replace('\n',"").replace('	',"")+'<br>') #뜻에서 텍스트 추출, 엔터 제거, 공백(탭?)제거 + 줄바꿈   
+            imi.append(meaning.get_text().replace('\n','').replace('	',''))  #뜻에서 텍스트 추출, 엔터 제거, 공백(탭?)제거 + 줄바꿈
         
-        file.write('\t')
+        if len(imi) == 1:   #뜻이 1개일시 실행
+            long_text += imi[0][2:-1]   #'1.' 제거, 마지막 '.' 제거
+        else:
+            long_text += '<br>'.join(imi)
+        long_text += '\t'
         
         exams = div.findAll('li','item_example')    #단어의 모든 예문 찾기
         for exam in exams:
-            origin = exam.find('p','origin')    #예문 추출
-            file.write(origin.get_text().replace('\n',"").replace('	',"")+'<br>') 
+            jp_ex = exam.find('p','origin')    #예문 추출
+            rei.append(jp_ex.get_text().replace('\n','').replace('	',''))
             translate = exam.find('p','translate')  #예문 해석 추출
-            file.write(translate.get_text().replace('\n',"").replace('	',"")+'<br><br>')
-        
-        try:    #참고어가 있다면 실행
-            refer = div.find('span', 'title_origin')    #참고어 찾기
-            file.write('\t')
-            file.write(refer.get_text())
+            rei.append(translate.get_text().replace('\n','').replace('	',''))
+            rei.append('')
+        try:
+            del rei[-1] #마지막 <br>은 제거
         except:
             pass
-                
+        long_text += '<br>'.join(rei)
+        
+        try:    #원어가 있다면 실행
+            origin = div.find('span', 'title_origin')    #원어 찾기
+            long_text += '\t'
+            long_text += origin.get_text()
+        except:
+            pass
+        
+        file.write(long_text)
         file.write('\n')
         
     if page == num: #마지막 페이지에 도달하면 break
