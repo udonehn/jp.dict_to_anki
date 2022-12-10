@@ -51,45 +51,46 @@ while True:
         rei = []    #예문
         long_text = ''
         
+        #한자와 히라가나
         word = div.find('a').get_text().replace('\n','').replace('	','').replace('-','')   #단어를 찾아 텍스트 추출, 엔터 제거, 공백 제거, 하이픈 제거 (한자와 히라가나를 모두 추출)
         if '[' in word: #괄호가 있다면 실행(한자가 있다면 실행)
             long_text += word.split('[')[0] + '\t'  #히라가나 추출 #('['를 경계로 히라가나와 한자 분리)
             long_text += word.split('[')[1].replace(']','') #한자 추출, ']' 제거
-        else:   #괄호가 없다면 실행
+        else:   #괄호가 없다면 실행(한자가 없다면 실행)
             long_text += word+'\t'+word
         long_text += '\t'
         
+        #단어 뜻
         meanings = div.findAll('div', 'mean_desc') #단어의 모든 뜻 찾기, div태그이면서 mean_desc 클래스
         for meaning in meanings:
             if meaning.em is not None: #값이 none이 아니라면 실행
                 meaning.em.decompose() #em 태그 제거  
             imi.append(meaning.get_text().replace('\n','').replace('	',''))  #뜻에서 텍스트 추출, 엔터 제거, 공백(탭?)제거 + 줄바꿈
-        
         if len(imi) == 1:   #뜻이 1개일시 실행
             long_text += imi[0][2:-1]   #'1.' 제거, 마지막 '.' 제거
         else:
-            long_text += '<br>'.join(imi)
+            long_text += '<br>'.join(imi)   #각 단어 뜻 사이에 <br> 삽입
         long_text += '\t'
         
+        #예문
         exams = div.findAll('li','item_example')    #단어의 모든 예문 찾기
         for exam in exams:
             jp_ex = exam.find('p','origin')    #예문 추출
             rei.append(jp_ex.get_text().replace('\n','').replace('	',''))
             translate = exam.find('p','translate')  #예문 해석 추출
             rei.append(translate.get_text().replace('\n','').replace('	',''))
-            rei.append('')
+            rei.append('')  #각 일본어:한국어 예문 후에 <br> 두 번 입력하기 위한 수단
         try:
             del rei[-1] #마지막 <br>은 제거
         except:
             pass
         long_text += '<br>'.join(rei)
+        long_text += '\t'
         
-        try:    #원어가 있다면 실행
-            origin = div.find('span', 'title_origin')    #원어 찾기
-            long_text += '\t'
+        #어원
+        origin = div.find('span', 'title_origin')    #어원 찾기
+        if origin is not None:  #어원이 있다면 실행
             long_text += origin.get_text()
-        except:
-            pass
         
         file.write(long_text)
         file.write('\n')
